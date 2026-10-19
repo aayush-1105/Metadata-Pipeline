@@ -1,0 +1,253 @@
+{
+  "metadata": {
+    "run_timestamp": "20260926_013515",
+    "module_name": "Module I - Metadata Predictor",
+    "target_definition": "y_fail = 1 - target_binary (1 = FAIL, 0 = PASS)",
+    "feature_count": 38,
+    "primary_calibrator": "sigmoid (Platt)",
+    "split_strategy": "deduplicated_stratified_70_15_15",
+    "best_iteration": 1000
+  },
+  "hyperparameters": {
+    "n_estimators": 1000,
+    "learning_rate": 0.05,
+    "num_leaves": 127,
+    "max_depth": 12,
+    "min_child_samples": 100,
+    "subsample": 0.8,
+    "subsample_freq": 5,
+    "colsample_bytree": 0.8,
+    "random_state": 42,
+    "n_jobs": -1,
+    "metric": "auc",
+    "early_stopping_rounds": 50
+  },
+  "dataset_demographics": {
+    "train": {
+      "total_rows": 643883,
+      "fail_count": 161631,
+      "pass_count": 482252,
+      "fail_percentage": 25.1025,
+      "pass_percentage": 74.8975,
+      "pr_percentage": 18.0328
+    },
+    "validation": {
+      "total_rows": 137975,
+      "fail_count": 34635,
+      "pass_count": 103340,
+      "fail_percentage": 25.1024,
+      "pass_percentage": 74.8976,
+      "pr_percentage": 17.9815
+    },
+    "test": {
+      "total_rows": 137975,
+      "fail_count": 34635,
+      "pass_count": 103340,
+      "fail_percentage": 25.1024,
+      "pass_percentage": 74.8976,
+      "pr_percentage": 17.9764
+    },
+    "total_build_events_all_splits": 919833
+  },
+  "global_metrics": {
+    "composite_fitness_score": 1.426552,
+    "mcc_at_50": 0.542534,
+    "roc_auc": 0.857884,
+    "pr_auc": 0.744879,
+    "note": "ROC-AUC and PR-AUC are invariant under monotone calibration."
+  },
+  "calibration_metrics": {
+    "per_scorer": {
+      "raw_lightgbm": {
+        "roc_auc": 0.857884,
+        "pr_auc": 0.744879,
+        "brier_score": 0.117027,
+        "ece": 0.023816,
+        "mcc_at_50": 0.536076,
+        "composite_fitness_score": 1.419049,
+        "prob_min": 0.00027,
+        "prob_max": 0.999785,
+        "prob_mean": 0.250205,
+        "prob_std": 0.240742
+      },
+      "calibrated_sigmoid": {
+        "roc_auc": 0.857884,
+        "pr_auc": 0.744879,
+        "brier_score": 0.115982,
+        "ece": 0.005171,
+        "mcc_at_50": 0.542534,
+        "composite_fitness_score": 1.426552,
+        "prob_min": 4.3e-05,
+        "prob_max": 0.99998,
+        "prob_mean": 0.249996,
+        "prob_std": 0.267727
+      },
+      "calibrated_isotonic": {
+        "roc_auc": 0.857753,
+        "pr_auc": 0.739049,
+        "brier_score": 0.115971,
+        "ece": 0.002268,
+        "mcc_at_50": 0.540479,
+        "composite_fitness_score": 1.424508,
+        "prob_min": 0.0,
+        "prob_max": 1.0,
+        "prob_mean": 0.24995,
+        "prob_std": 0.268897
+      }
+    },
+    "brier_improvement_sigmoid_vs_raw": 0.001045,
+    "brier_improvement_isotonic_vs_raw": 0.001056,
+    "calibration_bins_used": 10
+  },
+  "threshold_diagnostics": {
+    "raw_lightgbm": {
+      "low_risk_25pct": {
+        "threshold": 0.25,
+        "confusion_matrix": {
+          "true_negatives": 83109,
+          "false_positives": 20231,
+          "false_negatives": 8965,
+          "true_positives": 25670
+        },
+        "false_positive_rate": 0.195771,
+        "precision": 0.559247,
+        "recall": 0.741158,
+        "f1_score": 0.637479,
+        "mcc": 0.501899
+      },
+      "standard_50pct": {
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "true_negatives": 99793,
+          "false_positives": 3547,
+          "false_negatives": 18458,
+          "true_positives": 16177
+        },
+        "false_positive_rate": 0.034324,
+        "precision": 0.820168,
+        "recall": 0.467071,
+        "f1_score": 0.595191,
+        "mcc": 0.536076
+      },
+      "high_risk_canary_65pct": {
+        "threshold": 0.65,
+        "confusion_matrix": {
+          "true_negatives": 102337,
+          "false_positives": 1003,
+          "false_negatives": 22857,
+          "true_positives": 11778
+        },
+        "false_positive_rate": 0.009706,
+        "precision": 0.921524,
+        "recall": 0.340061,
+        "f1_score": 0.496794,
+        "mcc": 0.494081
+      }
+    },
+    "calibrated_sigmoid": {
+      "low_risk_25pct": {
+        "threshold": 0.25,
+        "confusion_matrix": {
+          "true_negatives": 83787,
+          "false_positives": 19553,
+          "false_negatives": 9188,
+          "true_positives": 25447
+        },
+        "false_positive_rate": 0.18921,
+        "precision": 0.565489,
+        "recall": 0.734719,
+        "f1_score": 0.639091,
+        "mcc": 0.50455
+      },
+      "standard_50pct": {
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "true_negatives": 98373,
+          "false_positives": 4967,
+          "false_negatives": 16904,
+          "true_positives": 17731
+        },
+        "false_positive_rate": 0.048065,
+        "precision": 0.78117,
+        "recall": 0.511939,
+        "f1_score": 0.618527,
+        "mcc": 0.542534
+      },
+      "high_risk_canary_65pct": {
+        "threshold": 0.65,
+        "confusion_matrix": {
+          "true_negatives": 101348,
+          "false_positives": 1992,
+          "false_negatives": 20674,
+          "true_positives": 13961
+        },
+        "false_positive_rate": 0.019276,
+        "precision": 0.875133,
+        "recall": 0.403089,
+        "f1_score": 0.551949,
+        "mcc": 0.520441
+      }
+    },
+    "calibrated_isotonic": {
+      "low_risk_25pct": {
+        "threshold": 0.25,
+        "confusion_matrix": {
+          "true_negatives": 81954,
+          "false_positives": 21386,
+          "false_negatives": 8616,
+          "true_positives": 26019
+        },
+        "false_positive_rate": 0.206948,
+        "precision": 0.548866,
+        "recall": 0.751234,
+        "f1_score": 0.6343,
+        "mcc": 0.496953
+      },
+      "standard_50pct": {
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "true_negatives": 98964,
+          "false_positives": 4376,
+          "false_negatives": 17510,
+          "true_positives": 17125
+        },
+        "false_positive_rate": 0.042346,
+        "precision": 0.796475,
+        "recall": 0.494442,
+        "f1_score": 0.610125,
+        "mcc": 0.540479
+      },
+      "high_risk_canary_65pct": {
+        "threshold": 0.65,
+        "confusion_matrix": {
+          "true_negatives": 101653,
+          "false_positives": 1687,
+          "false_negatives": 21265,
+          "true_positives": 13370
+        },
+        "false_positive_rate": 0.016325,
+        "precision": 0.887959,
+        "recall": 0.386026,
+        "f1_score": 0.538115,
+        "mcc": 0.514121
+      }
+    }
+  },
+  "feature_importance_top_15_by_gain": {
+    "gh_sloc": 321754.661,
+    "gh_repo_age": 289318.3984,
+    "tr_build_number": 270384.9075,
+    "gh_repo_num_commits": 265633.4356,
+    "log_team_size": 264031.8089,
+    "gh_test_lines_per_kloc": 236331.0357,
+    "gh_test_cases_per_kloc": 226694.6104,
+    "gh_asserts_cases_per_kloc": 220563.6346,
+    "git_prev_commit_resolution_status_merge_found": 58204.9243,
+    "gh_num_commits_on_files_touched": 56986.135,
+    "log_built_commits": 27001.1273,
+    "gh_lang_ruby": 26165.4797,
+    "total_files_changed": 19474.6391,
+    "gh_lang_java": 19021.9916,
+    "gh_lang_python": 18242.4616
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "metadata": {
+    "module_name": "Module I - Metadata Predictor",
+    "artifact_run": "run_20260926_013515",
+    "attribution_method": "TreeSHAP (shap.TreeExplainer)",
+    "shap_output_space": "log-odds (raw margin, positive/FAIL class)",
+    "feature_count": 38
+  },
+  "baseline_expected_value": -1.40698139,
+  "baseline_expected_value_probability": 0.19671061,
+  "sample_size": 5000,
+  "ranked_features": [
+    {
+      "rank": 1,
+      "feature_name": "log_team_size",
+      "mean_abs_shap": 0.22317718
+    },
+    {
+      "rank": 2,
+      "feature_name": "gh_repo_num_commits",
+      "mean_abs_shap": 0.20622323
+    },
+    {
+      "rank": 3,
+      "feature_name": "gh_sloc",
+      "mean_abs_shap": 0.20112495
+    },
+    {
+      "rank": 4,
+      "feature_name": "gh_test_lines_per_kloc",
+      "mean_abs_shap": 0.19332421
+    },
+    {
+      "rank": 5,
+      "feature_name": "gh_test_cases_per_kloc",
+      "mean_abs_shap": 0.17544266
+    },
+    {
+      "rank": 6,
+      "feature_name": "git_prev_commit_resolution_status_merge_found",
+      "mean_abs_shap": 0.16500577
+    },
+    {
+      "rank": 7,
+      "feature_name": "gh_asserts_cases_per_kloc",
+      "mean_abs_shap": 0.1630874
+    },
+    {
+      "rank": 8,
+      "feature_name": "tr_build_number",
+      "mean_abs_shap": 0.15979854
+    },
+    {
+      "rank": 9,
+      "feature_name": "gh_repo_age",
+      "mean_abs_shap": 0.15839996
+    },
+    {
+      "rank": 10,
+      "feature_name": "gh_lang_ruby",
+      "mean_abs_shap": 0.0941996
+    },
+    {
+      "rank": 11,
+      "feature_name": "log_built_commits",
+      "mean_abs_shap": 0.05418527
+    },
+    {
+      "rank": 12,
+      "feature_name": "gh_num_commits_on_files_touched",
+      "mean_abs_shap": 0.04962929
+    },
+    {
+      "rank": 13,
+      "feature_name": "gh_pr_created_at_year",
+      "mean_abs_shap": 0.04115144
+    },
+    {
+      "rank": 14,
+      "feature_name": "has_previous_build",
+      "mean_abs_shap": 0.0399006
+    },
+    {
+      "rank": 15,
+      "feature_name": "total_files_changed",
+      "mean_abs_shap": 0.03899573
+    },
+    {
+      "rank": 16,
+      "feature_name": "gh_diff_files_added",
+      "mean_abs_shap": 0.03578412
+    },
+    {
+      "rank": 17,
+      "feature_name": "gh_diff_other_files",
+      "mean_abs_shap": 0.0320846
+    },
+    {
+      "rank": 18,
+      "feature_name": "gh_lang_python",
+      "mean_abs_shap": 0.0269141
+    },
+    {
+      "rank": 19,
+      "feature_name": "gh_lang_java",
+      "mean_abs_shap": 0.02099188
+    },
+    {
+      "rank": 20,
+      "feature_name": "gh_pr_created_at_month",
+      "mean_abs_shap": 0.02038321
+    },
+    {
+      "rank": 21,
+      "feature_name": "gh_diff_files_modified",
+      "mean_abs_shap": 0.01363737
+    },
+    {
+      "rank": 22,
+      "feature_name": "gh_is_pr",
+      "mean_abs_shap": 0.0125637
+    },
+    {
+      "rank": 23,
+      "feature_name": "gh_by_core_team_member",
+      "mean_abs_shap": 0.01070213
+    },
+    {
+      "rank": 24,
+      "feature_name": "pr_dayofweek",
+      "mean_abs_shap": 0.0102826
+    },
+    {
+      "rank": 25,
+      "feature_name": "gh_diff_tests_deleted",
+      "mean_abs_shap": 0.00793006
+    },
+    {
+      "rank": 26,
+      "feature_name": "gh_diff_files_deleted",
+      "mean_abs_shap": 0.00630357
+    },
+    {
+      "rank": 27,
+      "feature_name": "gh_num_issue_comments",
+      "mean_abs_shap": 0.00608773
+    },
+    {
+      "rank": 28,
+      "feature_name": "code_churn_density",
+      "mean_abs_shap": 0.00546587
+    },
+    {
+      "rank": 29,
+      "feature_name": "gh_num_pr_comments",
+      "mean_abs_shap": 0.00337817
+    },
+    {
+      "rank": 30,
+      "feature_name": "git_diff_src_churn",
+      "mean_abs_shap": 0.00309719
+    },
+    {
+      "rank": 31,
+      "feature_name": "git_prev_commit_resolution_status_no_previous_build",
+      "mean_abs_shap": 0.00301397
+    },
+    {
+      "rank": 32,
+      "feature_name": "gh_diff_src_files",
+      "mean_abs_shap": 0.00264446
+    },
+    {
+      "rank": 33,
+      "feature_name": "gh_num_commit_comments",
+      "mean_abs_shap": 0.0023536
+    },
+    {
+      "rank": 34,
+      "feature_name": "gh_diff_tests_added",
+      "mean_abs_shap": 0.0010248
+    },
+    {
+      "rank": 35,
+      "feature_name": "gh_diff_doc_files",
+      "mean_abs_shap": 1.182e-05
+    },
+    {
+      "rank": 36,
+      "feature_name": "git_merged_with_present",
+      "mean_abs_shap": 0.0
+    },
+    {
+      "rank": 37,
+      "feature_name": "test_to_src_churn_ratio",
+      "mean_abs_shap": 0.0
+    },
+    {
+      "rank": 38,
+      "feature_name": "git_diff_test_churn",
+      "mean_abs_shap": 0.0
+    }
+  ]
+}

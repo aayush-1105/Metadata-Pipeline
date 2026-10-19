@@ -1,0 +1,67 @@
+[
+  {
+    "policy": "Low Risk",
+    "threshold": "0.25",
+    "use_case": "Broad early screening",
+    "tn": 83787,
+    "fp": 19553,
+    "fn": 9188,
+    "tp": 25447,
+    "recall_pct": 73.47,
+    "precision_pct": 56.55,
+    "fpr_pct": 18.92,
+    "test_rows": 137975
+  },
+  {
+    "policy": "Balanced Tier",
+    "threshold": "0.42",
+    "use_case": "Balanced catch vs. accuracy",
+    "tn": 95661,
+    "fp": 7679,
+    "fn": 14661,
+    "tp": 19974,
+    "recall_pct": 57.67,
+    "precision_pct": 72.23,
+    "fpr_pct": 7.43,
+    "test_rows": 137975
+  },
+  {
+    "policy": "Standard Gate",
+    "threshold": "0.50",
+    "use_case": "Default build gate",
+    "tn": 98373,
+    "fp": 4967,
+    "fn": 16904,
+    "tp": 17731,
+    "recall_pct": 51.19,
+    "precision_pct": 78.12,
+    "fpr_pct": 4.81,
+    "test_rows": 137975
+  },
+  {
+    "policy": "High Risk Tier",
+    "threshold": "0.55",
+    "use_case": "Accuracy-leaning gate",
+    "tn": 99555,
+    "fp": 3785,
+    "fn": 18165,
+    "tp": 16470,
+    "recall_pct": 47.55,
+    "precision_pct": 81.31,
+    "fpr_pct": 3.66,
+    "test_rows": 137975
+  },
+  {
+    "policy": "Strict Pre-Merge Block",
+    "threshold": "0.65",
+    "use_case": "Blocks riskiest commits",
+    "tn": 101348,
+    "fp": 1992,
+    "fn": 20674,
+    "tp": 13961,
+    "recall_pct": 40.31,
+    "precision_pct": 87.51,
+    "fpr_pct": 1.93,
+    "test_rows": 137975
+  }
+]

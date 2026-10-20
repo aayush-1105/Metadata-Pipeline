@@ -14,7 +14,7 @@
 ```bash
 # F:\Capstone\Metadata Pipeline\.env
 GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
-NGROK_AUTHTOKEN=3KulCDm3jYkJrF1n6q9dlSTNWhC_2e3zj3EGroLCj1zfLEYbw
+NGROK_AUTHTOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 ### `GITHUB_TOKEN` — Required for Both Modes
@@ -426,5 +426,3 @@ For production deployment, integrate with:
 - Production gate thresholds with SHAP explainability
 
 ---
-
-*Built with rigor for production CI/CD gatekeeping. Handoff-ready for Dhruv, Aadarsh, and Aditya CS.*

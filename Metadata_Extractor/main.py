@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import shutil
 import tempfile
+import stat
 
 import pandas as pd
 
@@ -65,6 +66,12 @@ def write_output(df: pd.DataFrame, path: str, write_mode: str):
     else:  # append: keep existing rows, only write the header for a new/empty file
         file_has_rows = os.path.exists(path) and os.path.getsize(path) > 0
         df.to_csv(path, index=False, mode="a", header=not file_has_rows)
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Error handler for shutil.rmtree to handle Windows read-only files."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 
 def main():
@@ -132,7 +139,7 @@ def main():
         print(final_df.T)
     finally:
         if temp_dir and os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(temp_dir, onerror=_handle_remove_readonly)
 
 
 if __name__ == "__main__":

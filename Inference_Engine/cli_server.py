@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import atexit
 import signal
+import stat
 from typing import Dict, Any, Optional
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +29,13 @@ from pyngrok import ngrok
 # Import our modules
 from .predictor_service import PredictorService, create_feature_dataframe, FEATURE_COLUMNS
 from .state_manager import StateManager
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Error handler for shutil.rmtree to handle Windows read-only files."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
 
 # Add parent directory to path for Metadata_Extractor imports
 import sys
@@ -115,23 +123,23 @@ def create_github_webhook(owner: str, repo: str, target_url: str, token: str) ->
         if response.status_code == 201:
             hook_data = response.json()
             hook_id = str(hook_data.get("id"))
-            print(f"[WEBHOOK] ✓ Successfully registered webhook (ID: {hook_id})")
+            print(f"[WEBHOOK] [OK] Successfully registered webhook (ID: {hook_id})")
             print(f"[WEBHOOK]   Target: {target_url}/webhook")
             print(f"[WEBHOOK]   Events: push, pull_request")
             return hook_id
         elif response.status_code == 404:
-            print(f"[WEBHOOK] ✗ Repository not found: {owner}/{repo}")
+            print(f"[WEBHOOK] [FAIL] Repository not found: {owner}/{repo}")
             print(f"[WEBHOOK]   Check that the repository exists and the token has access.")
         elif response.status_code == 403:
-            print(f"[WEBHOOK] ✗ Permission denied - GitHub token lacks 'admin:repo_hook' permission")
+            print(f"[WEBHOOK] [FAIL] Permission denied - GitHub token lacks 'admin:repo_hook' permission")
             print(f"[WEBHOOK]   Please ensure your PAT has 'admin:repo_hook' or 'repo' scope.")
             print(f"[WEBHOOK]   Falling back to manual webhook setup instructions...")
         else:
-            print(f"[WEBHOOK] ✗ Failed to create webhook: {response.status_code} - {response.text}")
+            print(f"[WEBHOOK] [FAIL] Failed to create webhook: {response.status_code} - {response.text}")
     except requests.RequestException as e:
-        print(f"[WEBHOOK] ✗ Network error creating webhook: {e}")
+        print(f"[WEBHOOK] [FAIL] Network error creating webhook: {e}")
     except Exception as e:
-        print(f"[WEBHOOK] ✗ Unexpected error: {e}")
+        print(f"[WEBHOOK] [FAIL] Unexpected error: {e}")
 
     return None
 
@@ -153,12 +161,12 @@ def delete_github_webhook(owner: str, repo: str, hook_id: str, token: str) -> bo
     try:
         response = requests.delete(url, headers=headers, timeout=10)
         if response.status_code == 204:
-            print(f"[WEBHOOK] ✓ Webhook {hook_id} deleted successfully")
+            print(f"[WEBHOOK] [OK] Webhook {hook_id} deleted successfully")
             return True
         else:
-            print(f"[WEBHOOK] ✗ Failed to delete webhook: {response.status_code} - {response.text}")
+            print(f"[WEBHOOK] [FAIL] Failed to delete webhook: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"[WEBHOOK] ✗ Error deleting webhook: {e}")
+        print(f"[WEBHOOK] [FAIL] Error deleting webhook: {e}")
     return False
 
 
@@ -169,9 +177,9 @@ def cleanup_resources():
     if _ngrok_tunnel:
         try:
             ngrok.disconnect(_ngrok_tunnel.public_url)
-            print(f"[NGROK] ✓ Tunnel {_ngrok_tunnel.public_url} closed")
+            print(f"[NGROK] [OK] Tunnel {_ngrok_tunnel.public_url} closed")
         except Exception as e:
-            print(f"[NGROK] ✗ Error closing tunnel: {e}")
+            print(f"[NGROK] [FAIL] Error closing tunnel: {e}")
         _ngrok_tunnel = None
 
     if _webhook_hook_id and config.get("owner") and config.get("repo") and config.get("github_token"):
@@ -185,9 +193,9 @@ def cleanup_resources():
 
     try:
         ngrok.kill()
-        print(f"[NGROK] ✓ Ngrok process terminated")
+        print(f"[NGROK] [OK] Ngrok process terminated")
     except Exception as e:
-        print(f"[NGROK] ✗ Error killing ngrok: {e}")
+        print(f"[NGROK] [FAIL] Error killing ngrok: {e}")
 
 
 def register_cleanup():
@@ -276,7 +284,7 @@ async def process_webhook_payload(payload: Dict, event_type: str) -> Dict:
         return result
 
     finally:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(temp_dir, onerror=_handle_remove_readonly)
 
 
 @app.get("/health")
@@ -353,7 +361,7 @@ def print_telemetry(result: Dict) -> None:
     print(f"          Test churn: {features.get('git_diff_test_churn', 'N/A')}")
     print(f"          Prev build: {'Yes' if features.get('has_previous_build') else 'No'}")
 
-    print(f"\n[TRANSFORM] All 38 features validated ✓ | Scaling contracts passed ✓")
+    print(f"\n[TRANSFORM] All 38 features validated [OK] | Scaling contracts passed [OK]")
 
     print(f"\n[INFERENCE] Calibrated Failure Probability: {result['failure_probability_pct']:.2f}%")
     print(f"            Raw Score: {result['raw_score']:.4f}")
@@ -407,7 +415,7 @@ def run_server_with_automation(host: str = "0.0.0.0", port: int = 5000):
     ngrok_auth_token = config.get("ngrok_auth_token")
     if ngrok_auth_token:
         ngrok.set_auth_token(ngrok_auth_token)
-        print(f"[NGROK] ✓ Authenticated with ngrok")
+        print(f"[NGROK] [OK] Authenticated with ngrok")
     else:
         print(f"[NGROK] ⚠ No NGROK_AUTHTOKEN found in .env - using unauthenticated tunnel (limited)")
 
@@ -415,7 +423,7 @@ def run_server_with_automation(host: str = "0.0.0.0", port: int = 5000):
     try:
         _ngrok_tunnel = ngrok.connect(port, bind_tls=True)
         public_url = _ngrok_tunnel.public_url
-        print(f"[NGROK] ✓ Tunnel established: {public_url}")
+        print(f"[NGROK] [OK] Tunnel established: {public_url}")
         print(f"[NGROK]   Forwarding to http://localhost:{port}")
 
         # Print webhook URL for reference
@@ -439,7 +447,7 @@ def run_server_with_automation(host: str = "0.0.0.0", port: int = 5000):
             print_manual_webhook_instructions(public_url)
 
     except Exception as e:
-        print(f"[NGROK] ✗ Failed to establish tunnel: {e}")
+        print(f"[NGROK] [FAIL] Failed to establish tunnel: {e}")
         print(f"[NGROK]   Falling back to manual setup...")
         print_manual_webhook_instructions(f"http://localhost:{port}")
 

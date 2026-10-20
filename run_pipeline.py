@@ -15,10 +15,17 @@ import argparse
 import tempfile
 import subprocess
 import shutil
+import stat
 import threading
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Error handler for shutil.rmtree to handle Windows read-only files."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -233,7 +240,7 @@ def run_extraction_and_prediction(predictor: PredictorService, owner: str, repo:
         raise
     finally:
         if temp_dir and os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(temp_dir, onerror=_handle_remove_readonly)
 
 
 def print_telemetry(result: dict):

@@ -211,6 +211,8 @@ def register_cleanup():
 async def process_webhook_payload(payload: Dict, event_type: str) -> Dict:
     """Process a webhook payload and return prediction result."""
     global predictor, state_manager, config
+    import time
+    from Metadata_Extractor.core.git_engine import sync_repo_cache
 
     # Extract repository info
     repo_info = payload.get("repository", {})
@@ -239,35 +241,23 @@ async def process_webhook_payload(payload: Dict, event_type: str) -> Dict:
     if state_manager:
         state_manager.set_last_seen_sha(sha)
 
-    # Clone repo if needed (for webhook mode, we use a temp clone)
-    temp_dir = tempfile.mkdtemp(prefix="webhook_extractor_")
-    repo_url = f"https://github.com/{owner}/{repo}.git"
+    # Use persistent repo cache instead of temp clone
+    print(f"\n[EXTRACT] Preparing {owner}/{repo} @ {sha[:7]}...")
+    extract_start = time.time()
+
+    github_token = config.get("github_token")
+    repo_path, cache_status = sync_repo_cache(owner, repo, sha, github_token)
 
     try:
-        # Clone with depth to get recent history
-        subprocess.run(
-            f'git clone --quiet --depth 50 "{repo_url}" "{temp_dir}"',
-            shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-
-        # Fetch the specific commit if not in shallow clone
-        subprocess.run(
-            f'git fetch --quiet origin "{sha}"',
-            cwd=temp_dir, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-
-        # Checkout the commit
-        subprocess.run(
-            f'git checkout -q {sha}',
-            cwd=temp_dir, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-
         # Extract features
-        features_dict = extract_features_for_commit(owner, repo, sha, temp_dir)
+        features_dict = extract_features_for_commit(owner, repo, sha, repo_path)
 
         # Create feature DataFrame and predict
         feature_df = create_feature_dataframe(features_dict)
         result = predictor.predict_commit_risk(feature_df)
+
+        extract_elapsed = time.time() - extract_start
+        print(f"[EXTRACT] Feature extraction completed in {extract_elapsed:.2f}s (cache {cache_status})")
 
         # Add metadata to result
         result.update({
@@ -283,8 +273,12 @@ async def process_webhook_payload(payload: Dict, event_type: str) -> Dict:
 
         return result
 
-    finally:
-        shutil.rmtree(temp_dir, onerror=_handle_remove_readonly)
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Git command failed: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Extraction/prediction failed: {e}")
+        raise
 
 
 @app.get("/health")

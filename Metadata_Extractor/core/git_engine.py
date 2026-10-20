@@ -1,10 +1,130 @@
 import subprocess
 import os
 import re
+import time
 from datetime import datetime
+from pathlib import Path
 
 SRC_EXTS = {'.py', '.java', '.rb', '.c', '.cpp', '.js', '.ts', '.go', '.rs'}
 DOC_EXTS = {'.md', '.rst', '.txt', '.pdf', '.docx', '.html'}
+
+# Root cache directory
+REPO_CACHE_ROOT = Path(__file__).parent.parent.parent / ".repo_cache"
+REPO_CACHE_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Error handler for shutil.rmtree to handle Windows read-only files."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
+def sync_repo_cache(owner: str, repo: str, commit_sha: str = None, token: str = None) -> tuple[str, str]:
+    """
+    Synchronize a persistent local Git cache for the given repository.
+
+    Returns:
+        tuple: (cache_dir_path, cache_status) where cache_status is "hit" or "miss"
+    """
+    cache_dir = REPO_CACHE_ROOT / f"{owner}__{repo}"
+    cache_git_dir = cache_dir / ".git"
+
+    # Build authenticated clone URL if token provided
+    repo_url = f"https://github.com/{owner}/{repo}.git"
+    if token:
+        # Insert token into URL for authenticated access
+        repo_url = f"https://{token}@github.com/{owner}/{repo}.git"
+
+    start_time = time.time()
+
+    if not cache_git_dir.exists():
+        # Path A — Cache Miss (First Run for a Repo)
+        print(f"[EXTRACT] Cache miss — Cloning {owner}/{repo} into persistent cache...")
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, onerror=_handle_remove_readonly)
+
+        subprocess.run(
+            f'git clone --quiet "{repo_url}" "{cache_dir}"',
+            shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        cache_status = "miss"
+    else:
+        # Path B — Cache Hit (Subsequent Runs / Commits)
+        print(f"[EXTRACT] Cache hit — Fetching latest delta for {owner}/{repo}...")
+        cache_status = "hit"
+
+        try:
+            # Fetch all refs and prune deleted ones
+            subprocess.run(
+                'git fetch --quiet --all --prune',
+                cwd=cache_dir, shell=True, check=True,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+
+            if commit_sha:
+                # Checkout specific commit
+                subprocess.run(
+                    f'git checkout --quiet --force "{commit_sha}"',
+                    cwd=cache_dir, shell=True, check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                # Clean any untracked files
+                subprocess.run(
+                    'git clean --quiet -fd',
+                    cwd=cache_dir, shell=True, check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+            else:
+                # No specific commit - checkout remote default branch HEAD
+                # Determine default branch
+                default_branch_output = subprocess.run(
+                    'git symbolic-ref refs/remotes/origin/HEAD',
+                    cwd=cache_dir, shell=True, capture_output=True, text=True
+                )
+                if default_branch_output.returncode == 0:
+                    default_branch = default_branch_output.stdout.strip().split('/')[-1]
+                else:
+                    # Fallback: try to get from remote show
+                    remote_show = subprocess.run(
+                        'git remote show origin',
+                        cwd=cache_dir, shell=True, capture_output=True, text=True
+                    )
+                    default_branch = "main"
+                    for line in remote_show.stdout.splitlines():
+                        if "HEAD branch" in line:
+                            default_branch = line.split(":")[-1].strip()
+                            break
+
+                subprocess.run(
+                    f'git checkout --quiet --force origin/{default_branch}',
+                    cwd=cache_dir, shell=True, check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(
+                    'git reset --quiet --hard',
+                    cwd=cache_dir, shell=True, check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(
+                    'git clean --quiet -fd',
+                    cwd=cache_dir, shell=True, check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+
+        except subprocess.CalledProcessError as e:
+            # Path C — Self-Healing Fallback
+            print(f"[EXTRACT] WARNING: Cache sync failed ({e}), wiping cache and falling back to fresh clone...")
+            try:
+                shutil.rmtree(cache_dir, onerror=_handle_remove_readonly)
+            except Exception:
+                pass
+            # Recursively call ourselves to do a fresh clone (Path A)
+            return sync_repo_cache(owner, repo, commit_sha, token)
+
+    elapsed = time.time() - start_time
+    print(f"[EXTRACT] Git sync completed in {elapsed:.2f}s (cache {cache_status})")
+
+    return str(cache_dir), cache_status
 
 def run_git(cmd, cwd):
     res = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=True)

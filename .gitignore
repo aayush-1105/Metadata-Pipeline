@@ -21,6 +21,9 @@ env/
 # Temporary directories
 **/temp_target_repo/
 
+# Persistent repo cache (incremental git fetch)
+.repo_cache/
+
 # Output files
 *.log
 features.csv

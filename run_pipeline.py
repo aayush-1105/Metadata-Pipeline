@@ -12,20 +12,12 @@ import sys
 import time
 import signal
 import argparse
-import tempfile
 import subprocess
-import shutil
 import stat
 import threading
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
-
-
-def _handle_remove_readonly(func, path, exc_info):
-    """Error handler for shutil.rmtree to handle Windows read-only files."""
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -180,36 +172,21 @@ def extract_features_for_commit(owner: str, repo: str, sha: str, repo_path: str)
 
 
 def run_extraction_and_prediction(predictor: PredictorService, owner: str, repo: str, sha: str,
-                                   event_type: str = "MANUAL", branch: str = "main") -> dict:
+                                   event_type: str = "MANUAL", branch: str = "main", github_token: str = None) -> dict:
     """Run full extraction + prediction pipeline for a commit."""
-    print(f"\n[EXTRACT] Cloning {owner}/{repo} @ {sha[:7]}...")
+    from Metadata_Extractor.core.git_engine import sync_repo_cache
+    import time
 
-    temp_dir = None
+    print(f"\n[EXTRACT] Preparing {owner}/{repo} @ {sha[:7]}...")
+    extract_start = time.time()
+
     try:
-        temp_dir = tempfile.mkdtemp(prefix="pipeline_extractor_")
-        repo_url = f"https://github.com/{owner}/{repo}.git"
-
-        # Clone with depth to get recent history
-        subprocess.run(
-            f'git clone --quiet --depth 50 "{repo_url}" "{temp_dir}"',
-            shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-
-        # Fetch the specific commit if not in shallow clone
-        subprocess.run(
-            f'git fetch --quiet origin "{sha}"',
-            cwd=temp_dir, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-
-        # Checkout the commit
-        subprocess.run(
-            f'git checkout -q {sha}',
-            cwd=temp_dir, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
+        # Use persistent repo cache instead of temp clone
+        repo_path, cache_status = sync_repo_cache(owner, repo, sha, github_token)
 
         # Extract features
         print("[EXTRACT] Computing git churn metrics...")
-        features_dict = extract_features_for_commit(owner, repo, sha, temp_dir)
+        features_dict = extract_features_for_commit(owner, repo, sha, repo_path)
 
         # Create feature DataFrame and predict
         print("[TRANSFORM] Validating 38-feature schema and scaling contracts...")
@@ -217,6 +194,9 @@ def run_extraction_and_prediction(predictor: PredictorService, owner: str, repo:
 
         print("[INFERENCE] Running model prediction...")
         result = predictor.predict_commit_risk(feature_df)
+
+        extract_elapsed = time.time() - extract_start
+        print(f"[EXTRACT] Feature extraction completed in {extract_elapsed:.2f}s (cache {cache_status})")
 
         # Add metadata to result
         result.update({
@@ -238,9 +218,6 @@ def run_extraction_and_prediction(predictor: PredictorService, owner: str, repo:
     except Exception as e:
         print(f"[ERROR] Extraction/prediction failed: {e}")
         raise
-    finally:
-        if temp_dir and os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir, onerror=_handle_remove_readonly)
 
 
 def print_telemetry(result: dict):
@@ -344,7 +321,7 @@ def run_webhook_mode(predictor: PredictorService, github_token: str, owner: str,
         commit_data, _ = state_mgr.fetch_latest_commit()
         if commit_data:
             print(f"[BASELINE] Found latest commit: {commit_data['short_sha']} - {commit_data['message'][:60]}")
-            result = run_extraction_and_prediction(predictor, owner, repo, commit_data["sha"], "BASELINE", "main")
+            result = run_extraction_and_prediction(predictor, owner, repo, commit_data["sha"], "BASELINE", "main", github_token)
             print_telemetry(result)
         else:
             print("[BASELINE] Could not fetch latest commit.")
@@ -385,7 +362,7 @@ def run_poller_mode(predictor: PredictorService, github_token: str, owner: str, 
         state_mgr.set_last_seen_sha(commit_data["sha"])
         print(f"[INIT] Baseline commit: {commit_data['short_sha']} - {commit_data['message'][:60]}")
         print(f"[INIT] Running initial prediction...")
-        result = run_extraction_and_prediction(predictor, owner, repo, commit_data["sha"], "BASELINE", "main")
+        result = run_extraction_and_prediction(predictor, owner, repo, commit_data["sha"], "BASELINE", "main", github_token)
         print_telemetry(result)
         poller_stats["predictions"] += 1
     else:
@@ -407,7 +384,7 @@ def run_poller_mode(predictor: PredictorService, github_token: str, owner: str, 
                     print(f"\n[NEW COMMIT] Detected: {commit_data['short_sha']} - {commit_data['message'][:60]}")
                     result = run_extraction_and_prediction(
                         predictor, owner, repo, commit_data["sha"],
-                        "POLL", "main"
+                        "POLL", "main", github_token
                     )
                     print_telemetry(result)
                     poller_stats["predictions"] += 1
